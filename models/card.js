@@ -23,7 +23,8 @@ const cardSchema = new mongoose.Schema({
   },
   createdAt: {
     type: Date,
-    default: Date.Now,
+    default: Date.now,
+    required: true
   }
 });
 
