@@ -15,6 +15,7 @@ module.exports.getCards = (req, res) => {
 }
 
 module.exports.deleteCardById = (req, res) => {
-  Card.findById(req.params.cardId)
+  Card.findByIdAndRemove(req.params.cardId)
+    .then(card => res.send({ data: card }))
     .catch(err => res.status(500).send({ message: 'Произошла ошибка' + err}));
 };
