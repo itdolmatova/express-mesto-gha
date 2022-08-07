@@ -23,6 +23,11 @@ app.use((req, res, next) => {
 
 app.use('/', usersRouter);
 app.use('/', cardsRouter);
+app.use((req, res, next) => {
+  res.status(404);
+  res.json({ message: 'Некорректный роут' });
+  next();
+});
 
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`);
