@@ -8,9 +8,9 @@
 Для этого замените разметку бейджей на следующий фрагмент, подставив вместо `${имя_пользователя}` и `${имя_репозитория}` соответствующие значения.
 
 ```
-[![Tests for sprint 13](https://github.com/${имя_пользователя}/${имя репозитория}/actions/workflows/tests-13-sprint.yml/badge.svg)](https://github.com/${имя_пользователя}/${имя репозитория}/actions/workflows/tests-13-sprint.yml) 
+[![Tests for sprint 13](https://github.com/${itdolmatova}/${express-mesto-gha}/actions/workflows/tests-13-sprint.yml/badge.svg)](https://github.com/${itdolmatova}/${express-mesto-gha}/actions/workflows/tests-13-sprint.yml) 
 
-[![Tests for sprint 14](https://github.com/${имя_пользователя}/${имя репозитория}/actions/workflows/tests-14-sprint.yml/badge.svg)](https://github.com/${имя_пользователя}/${имя репозитория}/actions/workflows/tests-14-sprint.yml)
+[![Tests for sprint 14](https://github.com/${itdolmatova}/${express-mesto-gha}/actions/workflows/tests-14-sprint.yml/badge.svg)](https://github.com/${itdolmatova}/${express-mesto-gha}/actions/workflows/tests-14-sprint.yml)
 ```
 
 
@@ -28,5 +28,3 @@
 `npm run dev` — запускает сервер с hot-reload
       
 
-delete - не удаляет картинку
-updateById - нпонятно, как передать новое значение поля
