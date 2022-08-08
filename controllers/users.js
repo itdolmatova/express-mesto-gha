@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const bcrypt = require('bcryptjs');
 
 const extractUser = (user) => {
   const {
@@ -83,5 +84,49 @@ module.exports.updateAvatar = (req, res) => {
       } else {
         res.status(500).send({ message: `Произошла ошибка: ${err}` });
       }
+    });
+};
+
+
+
+module.exports.signUp (req, res) => {
+  bcrypt.hash(req.body.password, 10)
+    .then(hash => User.create({
+      email: req.body.email,
+      password: hash, // записываем хеш в базу
+    }))
+    .then((user) => {
+      res.status(201).send(user);
+    })
+    .catch((err) => {
+      res.status(400).send(err);
+    });
+});
+// controllers/users.js
+
+module.exports.login = (req, res) => {
+  const { email, password } = req.body;
+
+  User.findOne({ email })
+    .then((user) => {
+      if (!user) {
+        return Promise.reject(new Error('Неправильные почта или пароль'));
+      }
+
+      return bcrypt.compare(password, user.password);
+    })
+    .then((matched) => {
+      if (!matched) {
+        // хеши не совпали — отклоняем промис
+        return Promise.reject(new Error('Неправильные почта или пароль'));
+      }
+
+      // аутентификация успешна
+      res.send({ message: 'Всё верно!' });
+    })
+    .catch((err) => {
+      res
+        .status(401)
+        .send({ message: err.message });
     });
 };
