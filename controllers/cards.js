@@ -1,5 +1,8 @@
 const Card = require('../models/card');
 const { extractUser } = require('./users');
+const {
+  ERROR_CODE_WRONG_DATA, ERROR_CODE_WRONG_ID, ERROR_CODE_UNKNOWN_SERVER_ERROR,
+} = require('../utils/utils');
 
 const extractCard = (card) => {
   const {
@@ -19,9 +22,9 @@ module.exports.createCard = (req, res) => {
     .then((card) => res.send(extractCard(card)))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(400).send({ message: 'Переданы некорректные данные при создании карточки.' });
+        res.status(ERROR_CODE_WRONG_DATA).send({ message: 'Переданы некорректные данные при создании карточки.' });
       } else {
-        res.status(500).send({ message: `Произошла ошибка: ${err}` });
+        res.status(ERROR_CODE_UNKNOWN_SERVER_ERROR).send({ message: `Произошла ошибка: ${err}` });
       }
     });
 };
@@ -30,17 +33,17 @@ module.exports.getCards = (req, res) => {
   Card.find({})
     .populate(['owner', 'likes'])
     .then((cards) => res.send(cards.map((card) => extractCard(card))))
-    .catch((err) => res.status(500).send({ message: `Произошла ошибка: ${err}` }));
+    .catch((err) => res.status(ERROR_CODE_UNKNOWN_SERVER_ERROR).send({ message: `Произошла ошибка: ${err}` }));
 };
 
 module.exports.deleteCardById = (req, res) => {
   Card.findByIdAndRemove(req.params.cardId)
-    .then((card) => (card ? res.send({ message: 'Пост удалён' }) : res.status(404).send({ message: 'Карточка с указанным _id не найдена.' })))
+    .then((card) => (card ? res.send({ message: 'Пост удалён' }) : res.status(ERROR_CODE_WRONG_ID).send({ message: 'Карточка с указанным _id не найдена.' })))
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Передан некорректный _id для удаления карточки.' });
+        res.status(ERROR_CODE_WRONG_DATA).send({ message: 'Передан некорректный _id для удаления карточки.' });
       } else {
-        res.status(500).send({ message: `Произошла ошибка: ${err}` });
+        res.status(ERROR_CODE_UNKNOWN_SERVER_ERROR).send({ message: `Произошла ошибка: ${err}` });
       }
     });
 };
@@ -51,12 +54,12 @@ module.exports.addLikeCard = (req, res) => {
     { $addToSet: { likes: req.user._id } }, // добавить _id в массив, если его там нет
     { new: true },
   ).populate(['owner', 'likes'])
-    .then((card) => (card ? res.send(extractCard(card)) : res.status(404).send({ message: 'Передан несуществующий _id карточки.' })))
+    .then((card) => (card ? res.send(extractCard(card)) : res.status(ERROR_CODE_WRONG_ID).send({ message: 'Передан несуществующий _id карточки.' })))
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Переданы некорректные данные для постановки лайка.' });
+        res.status(ERROR_CODE_WRONG_DATA).send({ message: 'Переданы некорректные данные для постановки лайка.' });
       } else {
-        res.status(500).send({ message: `Произошла ошибка: ${err}` });
+        res.status(ERROR_CODE_UNKNOWN_SERVER_ERROR).send({ message: `Произошла ошибка: ${err}` });
       }
     });
 };
@@ -67,12 +70,12 @@ module.exports.deleteLikeCard = (req, res) => {
     { $pull: { likes: req.user._id } }, // убрать _id из массива
     { new: true },
   ).populate(['owner', 'likes'])
-    .then((card) => (card ? res.send(extractCard(card)) : res.status(404).send({ message: 'Передан несуществующий _id карточки.' })))
+    .then((card) => (card ? res.send(extractCard(card)) : res.status(ERROR_CODE_WRONG_ID).send({ message: 'Передан несуществующий _id карточки.' })))
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Переданы некорректные данные для снятия лайка.' });
+        res.status(ERROR_CODE_WRONG_DATA).send({ message: 'Переданы некорректные данные для снятия лайка.' });
       } else {
-        res.status(500).send({ message: `Произошла ошибка: ${err}` });
+        res.status(ERROR_CODE_UNKNOWN_SERVER_ERROR).send({ message: `Произошла ошибка: ${err}` });
       }
     });
 };
