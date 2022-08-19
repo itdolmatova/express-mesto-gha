@@ -1,5 +1,6 @@
 const User = require('../models/user');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const extractUser = (user) => {
   const {
@@ -89,7 +90,7 @@ module.exports.updateAvatar = (req, res) => {
 
 
 
-module.exports.signUp (req, res) => {
+module.exports.signUp = (req, res) => {
   bcrypt.hash(req.body.password, 10)
     .then(hash => User.create({
       email: req.body.email,
@@ -101,30 +102,25 @@ module.exports.signUp (req, res) => {
     .catch((err) => {
       res.status(400).send(err);
     });
-});
+};
 // controllers/users.js
 
 module.exports.login = (req, res) => {
   const { email, password } = req.body;
 
-  User.findOne({ email })
+  return User.findUserByCredentials(email, password)
     .then((user) => {
-      if (!user) {
-        return Promise.reject(new Error('Неправильные почта или пароль'));
-      }
-
-      return bcrypt.compare(password, user.password);
-    })
-    .then((matched) => {
-      if (!matched) {
-        // хеши не совпали — отклоняем промис
-        return Promise.reject(new Error('Неправильные почта или пароль'));
-      }
-
-      // аутентификация успешна
-      res.send({ message: 'Всё верно!' });
+      // аутентификация успешна! пользователь в переменной user
+      const token = jwt.sign(
+        { _id: user._id },
+        'some-secret-key',
+        { expiresIn: 3600 } // токен будет просрочен через час после создания
+      );
+      // вернём токен
+      res.send({ token });
     })
     .catch((err) => {
+      // ошибка аутентификации
       res
         .status(401)
         .send({ message: err.message });
