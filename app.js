@@ -27,10 +27,9 @@ app.use((req, res, next) => {
 app.use(auth);
 app.use('/', usersRouter);
 app.use('/', cardsRouter);
-app.use((req, res, next) => {
+app.use((req, res) => {
   res.status(404);
   res.json({ message: 'Некорректный роут' });
-  next();
 });
 app.use(errors()); // обработчик ошибок celebrate
 const escape = require('escape-html');
