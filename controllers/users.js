@@ -1,25 +1,36 @@
-const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const User = require('../models/user');
 const {
-  ERROR_CODE_WRONG_DATA, ERROR_CODE_WRONG_ID, ERROR_CODE_UNKNOWN_SERVER_ERROR,
+  ERROR_CODE_WRONG_DATA, ERROR_CODE_WRONG_EMAIL_OR_PASSWORD,
+  ERROR_CODE_WRONG_ID, ERROR_CODE_UNKNOWN_SERVER_ERROR,
 } = require('../utils/utils');
 
 function extractUser(user) {
   const {
-    about, avatar, name, _id,
+    about, avatar, name, _id, email, password,
   } = user;
   return {
-    about, avatar, name, _id,
+    about, avatar, name, _id, email, password,
   };
 }
 
 module.exports.extractUser = extractUser;
 
 module.exports.createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
 
-  User.create({ name, about, avatar })
+  if (!password) {
+    res.status(ERROR_CODE_WRONG_DATA).send({ message: 'Переданы некорректные данные при создании пользователя.' });
+    return;
+  }
+
+  bcrypt.hash(password, 10)
+    .then((hash) => User.create({
+      name, about, avatar, email, password: hash,
+    }))
     .then((user) => res.send(extractUser(user)))
     .catch((err) => {
       if (err.name === 'ValidationError') {
@@ -91,11 +102,9 @@ module.exports.updateAvatar = (req, res) => {
     });
 };
 
-
-
 module.exports.signUp = (req, res) => {
   bcrypt.hash(req.body.password, 10)
-    .then(hash => User.create({
+    .then((hash) => User.create({
       email: req.body.email,
       password: hash, // записываем хеш в базу
     }))
@@ -117,7 +126,7 @@ module.exports.login = (req, res) => {
       const token = jwt.sign(
         { _id: user._id },
         'some-secret-key',
-        { expiresIn: 3600 } // токен будет просрочен через час после создания
+        { expiresIn: 604800 }, // токен будет просрочен через неделю после создания
       );
       // вернём токен
       res.send({ token });
@@ -125,7 +134,7 @@ module.exports.login = (req, res) => {
     .catch((err) => {
       // ошибка аутентификации
       res
-        .status(401)
+        .status(ERROR_CODE_WRONG_EMAIL_OR_PASSWORD)
         .send({ message: err.message });
     });
 };

@@ -1,3 +1,5 @@
+const jwt = require('jsonwebtoken');
+
 module.exports = (req, res, next) => {
   // достаём авторизационный заголовок
   const { authorization } = req.headers;
@@ -25,4 +27,5 @@ module.exports = (req, res, next) => {
   req.user = payload;
 
   next();
+  return undefined;
 };
