@@ -1,9 +1,14 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const { WrongDataError } = require('../errors/wrong-data-error');
+const { WrongEmailOrPasswordError } = require('../errors/wrong-email-or-password-error');
+const { WrongIdError } = require('../errors/wrong-id-error');
+const { EmailAlreadyExistError } = require('../errors/email-already-exist-error');
+
 const {
-  ERROR_CODE_WRONG_DATA, ERROR_CODE_WRONG_EMAIL_OR_PASSWORD,
-  ERROR_CODE_WRONG_ID, ERROR_CODE_UNKNOWN_SERVER_ERROR,
+  ERROR_CODE_WRONG_EMAIL_OR_PASSWORD,
+  ERROR_CODE_WRONG_ID,
 } = require('../utils/utils');
 
 function extractUser(user) {
@@ -17,14 +22,13 @@ function extractUser(user) {
 
 module.exports.extractUser = extractUser;
 
-module.exports.createUser = (req, res) => {
+module.exports.createUser = (req, res, next) => {
   const {
     name, about, avatar, email, password,
   } = req.body;
 
   if (!password) {
-    res.status(ERROR_CODE_WRONG_DATA).send({ message: 'Переданы некорректные данные при создании пользователя.' });
-    return;
+    throw new WrongDataError('Переданы некорректные данные при создании пользователя.');
   }
 
   bcrypt.hash(password, 10)
@@ -34,40 +38,47 @@ module.exports.createUser = (req, res) => {
     .then((user) => res.send(extractUser(user)))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(ERROR_CODE_WRONG_DATA).send({ message: 'Переданы некорректные данные при создании пользователя.' });
+        throw new WrongDataError('Переданы некорректные данные при создании пользователя.');
+      } else if (err.code === 11000) {
+        throw new EmailAlreadyExistError('Пользователь с таким email уже существует');
       } else {
-        res.status(ERROR_CODE_UNKNOWN_SERVER_ERROR).send({ message: `Произошла ошибка: ${err}` });
+        throw err;
       }
-    });
+    })
+    .catch(next);
 };
 
-module.exports.getUsers = (req, res) => {
+module.exports.getUsers = (req, res, next) => {
   User.find({})
     .then((users) => res.send(users.map((user) => extractUser(user))))
-    .catch((err) => res.status(ERROR_CODE_UNKNOWN_SERVER_ERROR).send({ message: `Произошла ошибка: ${err}` }));
+    .catch(next);
 };
 
-module.exports.getUserById = (req, res) => {
+module.exports.getUserById = (req, res, next) => {
   User.findById(req.params.userId)
-    .then((user) => (user ? res.send(extractUser(user)) : res.status(ERROR_CODE_WRONG_ID).send({ message: 'Пользователь по указанному _id не найден.' })))
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        res.status(ERROR_CODE_WRONG_DATA).send({ message: 'Пользователь по указанному _id не найден.' });
+    .then((user) => {
+      if (user) {
+        res.send(extractUser(user));
       } else {
-        res.status(ERROR_CODE_UNKNOWN_SERVER_ERROR).send({ message: `Произошла ошибка: ${err}` });
+        throw new WrongIdError('Пользователь по указанному _id не найден.');
       }
-    });
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') { // mongoose object id invalid format
+        throw new WrongDataError('Пользователь по указанному _id не найден.');
+      } else {
+        throw err;
+      }
+    }).catch(next);
 };
 
-module.exports.getUser = (req, res) => {
+module.exports.getUser = (req, res, next) => {
   User.findById(req.user._id)
     .then((user) => res.send(extractUser(user)))
-    .catch((err) => {
-      res.status(ERROR_CODE_UNKNOWN_SERVER_ERROR).send({ message: `Произошла ошибка: ${err}` });
-    });
+    .catch(next);
 };
 
-module.exports.updateUser = (req, res) => {
+module.exports.updateUser = (req, res, next) => {
   const { name, about } = req.body;
   User.findByIdAndUpdate(
     req.user._id,
@@ -80,14 +91,14 @@ module.exports.updateUser = (req, res) => {
   ).then((user) => (user ? res.send(extractUser(user)) : res.status(ERROR_CODE_WRONG_ID).send({ message: 'Пользователь с указанным _id не найден.' })))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(ERROR_CODE_WRONG_DATA).send({ message: 'Переданы некорректные данные при обновлении профиля.' });
+        throw new WrongDataError('Переданы некорректные данные при обновлении профиля.');
       } else {
-        res.status(ERROR_CODE_UNKNOWN_SERVER_ERROR).send({ message: `Произошла ошибка: ${err}` });
+        throw err;
       }
-    });
+    }).catch(next);
 };
 
-module.exports.updateAvatar = (req, res) => {
+module.exports.updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
 
   User.findByIdAndUpdate(
@@ -102,29 +113,14 @@ module.exports.updateAvatar = (req, res) => {
     .then((user) => (user ? res.send(extractUser(user)) : res.status(ERROR_CODE_WRONG_ID).send({ message: 'Пользователь с указанным _id не найден.' })))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(ERROR_CODE_WRONG_DATA).send({ message: 'Переданы некорректные данные при обновлении аватара.' });
+        throw new WrongDataError('Переданы некорректные данные при обновлении аватара.');
       } else {
-        res.status(ERROR_CODE_UNKNOWN_SERVER_ERROR).send({ message: `Произошла ошибка: ${err}` });
+        throw err;
       }
-    });
+    }).catch(next);
 };
 
-module.exports.signUp = (req, res) => {
-  bcrypt.hash(req.body.password, 10)
-    .then((hash) => User.create({
-      email: req.body.email,
-      password: hash, // записываем хеш в базу
-    }))
-    .then((user) => {
-      res.status(201).send(user);
-    })
-    .catch((err) => {
-      res.status(ERROR_CODE_WRONG_DATA).send(err);
-    });
-};
-// controllers/users.js
-
-module.exports.login = (req, res) => {
+module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
 
   return User.findUserByCredentials(email, password)
@@ -138,10 +134,8 @@ module.exports.login = (req, res) => {
       // вернём токен
       res.send({ token });
     })
-    .catch((err) => {
+    .catch(() => {
       // ошибка аутентификации
-      res
-        .status(ERROR_CODE_WRONG_EMAIL_OR_PASSWORD)
-        .send({ message: err.message });
-    });
+      throw new WrongEmailOrPasswordError('Некорректный Email или пароль');
+    }).catch(next);
 };
