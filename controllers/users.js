@@ -119,7 +119,7 @@ module.exports.signUp = (req, res) => {
       res.status(201).send(user);
     })
     .catch((err) => {
-      res.status(400).send(err);
+      res.status(ERROR_CODE_WRONG_DATA).send(err);
     });
 };
 // controllers/users.js

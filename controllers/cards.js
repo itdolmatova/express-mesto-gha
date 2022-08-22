@@ -37,8 +37,13 @@ module.exports.getCards = (req, res) => {
 };
 
 module.exports.deleteCardById = (req, res) => {
-  Card.findByIdAndRemove(req.params.cardId)
-    .then((card) => (card ? res.send({ message: 'Пост удалён' }) : res.status(ERROR_CODE_WRONG_ID).send({ message: 'Карточка с указанным _id не найдена.' })))
+  Card.findById(req.params.cardId)
+    .then((card) => {
+      if (card.owner._id.toString() !== req.user._id) {
+        return Promise.reject(new Error('Карточка создана не Вами, запрещено удалять чужие карточки'));
+      }
+      return (card ? res.send({ message: 'Пост удалён' }) : res.status(ERROR_CODE_WRONG_ID).send({ message: 'Карточка с указанным _id не найдена.' }));
+    })
     .catch((err) => {
       if (err.name === 'CastError') {
         res.status(ERROR_CODE_WRONG_DATA).send({ message: 'Передан некорректный _id для удаления карточки.' });
