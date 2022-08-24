@@ -6,11 +6,6 @@ const { WrongEmailOrPasswordError } = require('../errors/wrong-email-or-password
 const { WrongIdError } = require('../errors/wrong-id-error');
 const { EmailAlreadyExistError } = require('../errors/email-already-exist-error');
 
-const {
-  ERROR_CODE_WRONG_EMAIL_OR_PASSWORD,
-  ERROR_CODE_WRONG_ID,
-} = require('../utils/utils');
-
 function extractUser(user) {
   const {
     about, avatar, name, _id, email, password,
@@ -88,14 +83,17 @@ module.exports.updateUser = (req, res, next) => {
       new: true, // обработчик then получит на вход обновлённую запись
       runValidators: true, // данные будут валидированы перед изменением
     },
-  ).then((user) => (user ? res.send(extractUser(user)) : res.status(ERROR_CODE_WRONG_ID).send({ message: 'Пользователь с указанным _id не найден.' })))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        throw new WrongDataError('Переданы некорректные данные при обновлении профиля.');
-      } else {
-        throw err;
-      }
-    }).catch(next);
+  ).then((user) => {
+    if (user) {
+      res.send(extractUser(user));
+    } else throw new WrongIdError('Пользователь с указанным _id не найден.');
+  }).catch((err) => {
+    if (err.name === 'ValidationError') {
+      throw new WrongDataError('Переданы некорректные данные при обновлении профиля.');
+    } else {
+      throw err;
+    }
+  }).catch(next);
 };
 
 module.exports.updateAvatar = (req, res, next) => {
@@ -110,8 +108,11 @@ module.exports.updateAvatar = (req, res, next) => {
       runValidators: true, // данные будут валидированы перед изменением
     },
   )
-    .then((user) => (user ? res.send(extractUser(user)) : res.status(ERROR_CODE_WRONG_ID).send({ message: 'Пользователь с указанным _id не найден.' })))
-    .catch((err) => {
+    .then((user) => {
+      if (user) {
+        res.send(extractUser(user));
+      } else throw new WrongIdError('Пользователь с указанным _id не найден.');
+    }).catch((err) => {
       if (err.name === 'ValidationError') {
         throw new WrongDataError('Переданы некорректные данные при обновлении аватара.');
       } else {

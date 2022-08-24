@@ -1,8 +1,7 @@
 const Card = require('../models/card');
 const { extractUser } = require('./users');
-const {
-  ERROR_CODE_WRONG_DATA, ERROR_CODE_WRONG_ID, ERROR_CODE_UNKNOWN_SERVER_ERROR,
-} = require('../utils/utils');
+const { WrongDataError } = require('../errors/wrong-data-error');
+const { WrongIdError } = require('../errors/wrong-id-error');
 
 const extractCard = (card) => {
   const {
@@ -14,7 +13,7 @@ const extractCard = (card) => {
   };
 };
 
-module.exports.createCard = (req, res) => {
+module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
 
   Card.create({ name, link, owner: req.user._id })
@@ -22,65 +21,83 @@ module.exports.createCard = (req, res) => {
     .then((card) => res.send(extractCard(card)))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(ERROR_CODE_WRONG_DATA).send({ message: 'Переданы некорректные данные при создании карточки.' });
+        throw new WrongDataError('Переданы некорректные данные при создании карточки.');
       } else {
-        res.status(ERROR_CODE_UNKNOWN_SERVER_ERROR).send({ message: `Произошла ошибка: ${err}` });
+        throw err;
       }
-    });
+    })
+    .catch(next);
 };
 
-module.exports.getCards = (req, res) => {
+module.exports.getCards = (req, res, next) => {
   Card.find({})
     .populate(['owner', 'likes'])
     .then((cards) => res.send(cards.map((card) => extractCard(card))))
-    .catch((err) => res.status(ERROR_CODE_UNKNOWN_SERVER_ERROR).send({ message: `Произошла ошибка: ${err}` }));
+    .catch(next);
 };
 
-module.exports.deleteCardById = (req, res) => {
+module.exports.deleteCardById = (req, res, next) => {
   Card.findById(req.params.cardId)
     .then((card) => {
-      if (card.owner._id.toString() !== req.user._id) {
-        return Promise.reject(new Error('Карточка создана не Вами, запрещено удалять чужие карточки'));
+      if (!card) {
+        throw new WrongIdError('Карточка с указанным _id не найдена.');
       }
-      return (card ? res.send({ message: 'Пост удалён' }) : res.status(ERROR_CODE_WRONG_ID).send({ message: 'Карточка с указанным _id не найдена.' }));
+      if (card.owner._id.toString() !== req.user._id) {
+        throw new Error('Карточка создана не Вами, запрещено удалять чужие карточки');
+      }
+
+      return res.send({ message: 'Пост удалён' });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(ERROR_CODE_WRONG_DATA).send({ message: 'Передан некорректный _id для удаления карточки.' });
+        throw new WrongDataError('Передан некорректный _id для удаления карточки.');
       } else {
-        res.status(ERROR_CODE_UNKNOWN_SERVER_ERROR).send({ message: `Произошла ошибка: ${err}` });
+        throw err;
       }
-    });
+    })
+    .catch(next);
 };
 
-module.exports.addLikeCard = (req, res) => {
+module.exports.addLikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $addToSet: { likes: req.user._id } }, // добавить _id в массив, если его там нет
     { new: true },
   ).populate(['owner', 'likes'])
-    .then((card) => (card ? res.send(extractCard(card)) : res.status(ERROR_CODE_WRONG_ID).send({ message: 'Передан несуществующий _id карточки.' })))
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        res.status(ERROR_CODE_WRONG_DATA).send({ message: 'Переданы некорректные данные для постановки лайка.' });
+    .then((card) => {
+      if (card) {
+        res.send(extractCard(card));
       } else {
-        res.status(ERROR_CODE_UNKNOWN_SERVER_ERROR).send({ message: `Произошла ошибка: ${err}` });
+        throw new WrongIdError('Передан несуществующий _id карточки.');
       }
-    });
+    }).catch((err) => {
+      if (err.name === 'CastError') {
+        throw new WrongDataError('Переданы некорректные данные для постановки лайка.');
+      } else {
+        throw err;
+      }
+    })
+    .catch(next);
 };
 
-module.exports.deleteLikeCard = (req, res) => {
+module.exports.deleteLikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $pull: { likes: req.user._id } }, // убрать _id из массива
     { new: true },
   ).populate(['owner', 'likes'])
-    .then((card) => (card ? res.send(extractCard(card)) : res.status(ERROR_CODE_WRONG_ID).send({ message: 'Передан несуществующий _id карточки.' })))
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        res.status(ERROR_CODE_WRONG_DATA).send({ message: 'Переданы некорректные данные для снятия лайка.' });
+    .then((card) => {
+      if (card) {
+        res.send(extractCard(card));
       } else {
-        res.status(ERROR_CODE_UNKNOWN_SERVER_ERROR).send({ message: `Произошла ошибка: ${err}` });
+        throw new WrongIdError('Передан несуществующий _id карточки.');
       }
-    });
+    }).catch((err) => {
+      if (err.name === 'CastError') {
+        throw new WrongDataError('Переданы некорректные данные для снятия лайка.');
+      } else {
+        throw err;
+      }
+    })
+    .catch(next);
 };

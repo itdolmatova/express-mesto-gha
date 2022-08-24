@@ -1,7 +1,5 @@
 const jwt = require('jsonwebtoken');
-const {
-  ERROR_CODE_WRONG_EMAIL_OR_PASSWORD,
-} = require('../utils/utils');
+const { WrongEmailOrPasswordError } = require('../errors/wrong-email-or-password-error');
 
 module.exports = (req, res, next) => {
   // достаём авторизационный заголовок
@@ -10,7 +8,7 @@ module.exports = (req, res, next) => {
   // убеждаемся, что он есть или начинается с Bearer
   if (!authorization || !authorization.startsWith('Bearer ')) {
     return res
-      .status(ERROR_CODE_WRONG_EMAIL_OR_PASSWORD)
+      .status(WrongEmailOrPasswordError.statusCode)
       .send({ message: 'Необходима авторизация' });
   }
 
@@ -23,7 +21,7 @@ module.exports = (req, res, next) => {
   } catch (err) {
     // отправим ошибку, если не получилось
     return res
-      .status(ERROR_CODE_WRONG_EMAIL_OR_PASSWORD)
+      .status(WrongEmailOrPasswordError.statusCode)
       .send({ message: 'Необходима авторизация' });
   }
 
