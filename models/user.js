@@ -3,7 +3,7 @@ const isEmail = require('validator/lib/isEmail');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const regexForAvatar = /https?:\/\/\S+/i;
+const regexForAvatar = /https?:\/\/\S+.\S+/i;
 
 const userSchema = new mongoose.Schema({
   name: {
