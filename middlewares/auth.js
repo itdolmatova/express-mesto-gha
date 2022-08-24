@@ -7,9 +7,7 @@ module.exports = (req, res, next) => {
 
   // убеждаемся, что он есть или начинается с Bearer
   if (!authorization || !authorization.startsWith('Bearer ')) {
-    return res
-      .status(WrongEmailOrPasswordError.statusCode)
-      .send({ message: 'Необходима авторизация' });
+    throw new WrongEmailOrPasswordError('Необходима авторизация');
   }
 
   const token = authorization.replace('Bearer ', '');
@@ -20,9 +18,7 @@ module.exports = (req, res, next) => {
     payload = jwt.verify(token, 'some-secret-key');
   } catch (err) {
     // отправим ошибку, если не получилось
-    return res
-      .status(WrongEmailOrPasswordError.statusCode)
-      .send({ message: 'Необходима авторизация' });
+    throw new WrongEmailOrPasswordError('Необходима авторизация');
   }
 
   req.user = payload;
