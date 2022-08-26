@@ -3,16 +3,9 @@
 
 
 
-## Настройка бейджей статуса тестов
-Перед началом работы над проектом рекомендуется исправить бейджи, отражающие статус прохождения тестов.
-Для этого замените разметку бейджей на следующий фрагмент, подставив вместо `${имя_пользователя}` и `${имя_репозитория}` соответствующие значения.
+## Общие сведения
 
-```
-[![Tests for sprint 13](https://github.com/${itdolmatova}/${express-mesto-gha}/actions/workflows/tests-13-sprint.yml/badge.svg)](https://github.com/${itdolmatova}/${express-mesto-gha}/actions/workflows/tests-13-sprint.yml) 
-
-[![Tests for sprint 14](https://github.com/${itdolmatova}/${express-mesto-gha}/actions/workflows/tests-14-sprint.yml/badge.svg)](https://github.com/${itdolmatova}/${express-mesto-gha}/actions/workflows/tests-14-sprint.yml)
-```
-
+методы, необходимые для функционала одностраничного сайта  Mesto (аутентификация и авторизация, редактирование данных профиля, добавление и удаление картинок, добавление и удаление лайков на картинке), реализованы на сервере.
 
 ## Директории
 
