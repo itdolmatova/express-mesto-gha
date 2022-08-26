@@ -7,11 +7,12 @@ const { WrongIdError } = require('../errors/wrong-id-error');
 const { EmailAlreadyExistError } = require('../errors/email-already-exist-error');
 
 function extractUser(user) {
+  console.log(user);
   const {
-    about, avatar, name, _id, email, password,
+    _id, email,
   } = user;
   return {
-    about, avatar, name, _id, email, password,
+    about: user.about, avatar: user.avatar, name: user.name, _id, email,
   };
 }
 

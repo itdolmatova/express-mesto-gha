@@ -9,7 +9,7 @@ const extractCard = (card) => {
   } = card;
   const likers = likes ? likes.map((user) => extractUser(user)) : likes;
   return {
-    createdAt, link, likes: likers, owner: extractUser(owner), _id,
+    createdAt, link, likes: likers, owner: (owner ? extractUser(owner) : null), _id,
   };
 };
 
