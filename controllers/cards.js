@@ -2,6 +2,7 @@ const Card = require('../models/card');
 const { extractUser } = require('./users');
 const { WrongDataError } = require('../errors/wrong-data-error');
 const { WrongIdError } = require('../errors/wrong-id-error');
+const { WrongUserError } = require('../errors/wrong-user-error');
 
 const extractCard = (card) => {
   const {
@@ -43,7 +44,7 @@ module.exports.deleteCardById = (req, res, next) => {
         throw new WrongIdError('Карточка с указанным _id не найдена.');
       }
       if (card.owner._id.toString() !== req.user._id) {
-        throw new Error('Карточка создана не Вами, запрещено удалять чужие карточки');
+        throw new WrongUserError('Карточка создана не Вами, запрещено удалять чужие карточки');
       }
 
       return res.send({ message: 'Пост удалён' });
