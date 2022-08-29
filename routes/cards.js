@@ -3,11 +3,12 @@ const { celebrate, Joi } = require('celebrate');
 const {
   createCard, getCards, deleteCardById, addLikeCard, deleteLikeCard,
 } = require('../controllers/cards');
+const regexForLink = require('../utils/regexForLink');
 
 router.post('/cards', celebrate({
   body: Joi.object().keys({
     name: Joi.string().min(2).max(30).required(),
-    link: Joi.string().uri().pattern(/https?:\/\/\S+\.\S+/i).required(),
+    link: Joi.string().uri().pattern(regexForLink).required(),
   }).unknown(true),
 }), createCard);
 

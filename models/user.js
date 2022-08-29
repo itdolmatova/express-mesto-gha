@@ -3,7 +3,7 @@ const isEmail = require('validator/lib/isEmail');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const regexForAvatar = /https?:\/\/\S+\.\S+/i;
+const regexForLink = require('../utils/regexForLink');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
     validate: {
-      validator: (value) => value.match(regexForAvatar),
+      validator: (value) => value.match(regexForLink),
     },
   },
   email: {
