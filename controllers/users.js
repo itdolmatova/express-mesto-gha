@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const { WrongDataError } = require('../errors/wrong-data-error');
 const { WrongEmailOrPasswordError } = require('../errors/wrong-email-or-password-error');
-const { WrongIdError } = require('../errors/wrong-id-error');
+const { NotFoundError } = require('../errors/not-found-error');
 const { EmailAlreadyExistError } = require('../errors/email-already-exist-error');
 
 function extractUser(user) {
@@ -51,7 +51,7 @@ module.exports.getUserById = (req, res, next) => {
       if (user) {
         res.send(extractUser(user));
       } else {
-        throw new WrongIdError('Пользователь по указанному _id не найден.');
+        throw new NotFoundError('Пользователь по указанному _id не найден.');
       }
     })
     .catch((err) => {
@@ -82,7 +82,7 @@ module.exports.updateUser = (req, res, next) => {
   ).then((user) => {
     if (user) {
       res.send(extractUser(user));
-    } else throw new WrongIdError('Пользователь с указанным _id не найден.');
+    } else throw new NotFoundError('Пользователь с указанным _id не найден.');
   }).catch((err) => {
     if (err.name === 'ValidationError') {
       next(new WrongDataError('Переданы некорректные данные при обновлении профиля.'));
@@ -107,7 +107,7 @@ module.exports.updateAvatar = (req, res, next) => {
     .then((user) => {
       if (user) {
         res.send(extractUser(user));
-      } else throw new WrongIdError('Пользователь с указанным _id не найден.');
+      } else throw new NotFoundError('Пользователь с указанным _id не найден.');
     }).catch((err) => {
       if (err.name === 'ValidationError') {
         next(new WrongDataError('Переданы некорректные данные при обновлении аватара.'));

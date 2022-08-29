@@ -8,6 +8,7 @@ const {
   createUser, login,
 } = require('./controllers/users');
 const { RegExpForLink } = require('./utils/RegExpForLink');
+const { NotFoundError } = require('./errors/not-found-error');
 
 const auth = require('./middlewares/auth');
 
@@ -36,17 +37,17 @@ app.post('/signup', celebrate({
     about: Joi.string().min(2).max(30),
     avatar: Joi.string().uri().pattern(RegExpForLink),
     email: Joi.string().required().email(),
-    password: Joi.string().required().min(8),
+    password: Joi.string().required(),
   }),
 }), createUser);
 
 app.use(auth);
 app.use('/', usersRouter);
 app.use('/', cardsRouter);
-app.use((req, res) => {
-  res.status(404);
-  res.json({ message: 'Некорректный роут' });
+app.use((req, res, next) => {
+  next(new NotFoundError('Некорректный роут'));
 });
+
 app.use(errors()); // обработчик ошибок celebrate
 app.use((err, req, res, next) => {
   // если у ошибки нет статуса, выставляем 500
