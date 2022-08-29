@@ -7,6 +7,7 @@ const cardsRouter = require('./routes/cards');
 const {
   createUser, login,
 } = require('./controllers/users');
+const { RegExpForLink } = require('./utils/RegExpForLink');
 
 const auth = require('./middlewares/auth');
 
@@ -25,17 +26,18 @@ app.use(bodyParser.urlencoded({ extended: true })); // для приёма ве�
 app.post('/signin', celebrate({
   body: Joi.object().keys({
     email: Joi.string().required().email(),
-    password: Joi.string().required().min(8),
-  }).unknown(true),
+    password: Joi.string().required(),
+  }),
 }), login);
+
 app.post('/signup', celebrate({
   body: Joi.object().keys({
     name: Joi.string().min(2).max(30),
     about: Joi.string().min(2).max(30),
-    avatar: Joi.string().uri().pattern(/https?:\/\/\S+\.\S+/i),
+    avatar: Joi.string().uri().pattern(RegExpForLink),
     email: Joi.string().required().email(),
     password: Joi.string().required().min(8),
-  }).unknown(true),
+  }),
 }), createUser);
 
 app.use(auth);
