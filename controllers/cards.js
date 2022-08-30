@@ -45,8 +45,9 @@ module.exports.deleteCardById = (req, res, next) => {
       if (card.owner._id.toString() !== req.user._id) {
         throw new WrongUserError('Карточка создана не Вами, запрещено удалять чужие карточки');
       }
-      card.remove();
-      return res.send({ message: 'Пост удалён' });
+      return card.remove();
+    }).then(() => {
+      res.send({ message: 'Пост удалён' });
     })
     .catch((err) => {
       if (err.name === 'CastError') {

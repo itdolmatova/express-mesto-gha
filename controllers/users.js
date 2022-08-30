@@ -131,8 +131,11 @@ module.exports.login = (req, res, next) => {
       // вернём токен
       res.send({ token });
     })
-    .catch(() => {
-      // ошибка аутентификации
-      next(new WrongEmailOrPasswordError('Некорректный Email или пароль'));
+    .catch((err) => {
+      if (err === 'ValidationError') {
+        next(new WrongEmailOrPasswordError('Некорректный Email или пароль'));
+      } else {
+        next(err);
+      }
     });
 };
