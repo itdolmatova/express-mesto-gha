@@ -10,7 +10,6 @@ const {
 
 const auth = require('./middlewares/auth');
 
-const { PORT = 3000 } = process.env;
 const app = express();
 
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb')
@@ -60,8 +59,4 @@ app.use((err, req, res, next) => {
     });
 
   next();
-});
-
-app.listen(PORT, () => {
-  console.log(`App listening on port ${PORT}`);
 });
