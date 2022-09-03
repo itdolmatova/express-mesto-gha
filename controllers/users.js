@@ -3,15 +3,16 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const { WrongDataError } = require('../errors/wrong-data-error');
 const { WrongEmailOrPasswordError } = require('../errors/wrong-email-or-password-error');
-const { WrongIdError } = require('../errors/wrong-id-error');
+const { NotFoundError } = require('../errors/not-found-error');
 const { EmailAlreadyExistError } = require('../errors/email-already-exist-error');
 
 function extractUser(user) {
+  console.log(user);
   const {
-    about, avatar, name, _id, email, password,
+    _id, email,
   } = user;
   return {
-    about, avatar, name, _id, email, password,
+    about: user.about, avatar: user.avatar, name: user.name, _id, email,
   };
 }
 
@@ -22,10 +23,6 @@ module.exports.createUser = (req, res, next) => {
     name, about, avatar, email, password,
   } = req.body;
 
-  if (!password) {
-    throw new WrongDataError('Переданы некорректные данные при создании пользователя.');
-  }
-
   bcrypt.hash(password, 10)
     .then((hash) => User.create({
       name, about, avatar, email, password: hash,
@@ -35,12 +32,11 @@ module.exports.createUser = (req, res, next) => {
       if (err.name === 'ValidationError') {
         throw new WrongDataError('Переданы некорректные данные при создании пользователя.');
       } else if (err.code === 11000) {
-        throw new EmailAlreadyExistError('Пользователь с таким email уже существует');
+        next(new EmailAlreadyExistError('Пользователь с таким email уже существует'));
       } else {
-        throw err;
+        next(err);
       }
-    })
-    .catch(next);
+    });
 };
 
 module.exports.getUsers = (req, res, next) => {
@@ -55,16 +51,16 @@ module.exports.getUserById = (req, res, next) => {
       if (user) {
         res.send(extractUser(user));
       } else {
-        throw new WrongIdError('Пользователь по указанному _id не найден.');
+        throw new NotFoundError('Пользователь по указанному _id не найден.');
       }
     })
     .catch((err) => {
       if (err.name === 'CastError') { // mongoose object id invalid format
-        throw new WrongDataError('Пользователь по указанному _id не найден.');
+        next(new WrongDataError('Пользователь по указанному _id не найден.'));
       } else {
-        throw err;
+        next(err);
       }
-    }).catch(next);
+    });
 };
 
 module.exports.getUser = (req, res, next) => {
@@ -86,14 +82,14 @@ module.exports.updateUser = (req, res, next) => {
   ).then((user) => {
     if (user) {
       res.send(extractUser(user));
-    } else throw new WrongIdError('Пользователь с указанным _id не найден.');
+    } else throw new NotFoundError('Пользователь с указанным _id не найден.');
   }).catch((err) => {
     if (err.name === 'ValidationError') {
-      throw new WrongDataError('Переданы некорректные данные при обновлении профиля.');
+      next(new WrongDataError('Переданы некорректные данные при обновлении профиля.'));
     } else {
-      throw err;
+      next(err);
     }
-  }).catch(next);
+  });
 };
 
 module.exports.updateAvatar = (req, res, next) => {
@@ -111,14 +107,14 @@ module.exports.updateAvatar = (req, res, next) => {
     .then((user) => {
       if (user) {
         res.send(extractUser(user));
-      } else throw new WrongIdError('Пользователь с указанным _id не найден.');
+      } else throw new NotFoundError('Пользователь с указанным _id не найден.');
     }).catch((err) => {
       if (err.name === 'ValidationError') {
-        throw new WrongDataError('Переданы некорректные данные при обновлении аватара.');
+        next(new WrongDataError('Переданы некорректные данные при обновлении аватара.'));
       } else {
-        throw err;
+        next(err);
       }
-    }).catch(next);
+    });
 };
 
 module.exports.login = (req, res, next) => {
@@ -135,8 +131,11 @@ module.exports.login = (req, res, next) => {
       // вернём токен
       res.send({ token });
     })
-    .catch(() => {
-      // ошибка аутентификации
-      throw new WrongEmailOrPasswordError('Некорректный Email или пароль');
-    }).catch(next);
+    .catch((err) => {
+      if (err === 'ValidationError') {
+        next(new WrongEmailOrPasswordError('Некорректный Email или пароль'));
+      } else {
+        next(err);
+      }
+    });
 };

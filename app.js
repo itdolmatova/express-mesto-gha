@@ -7,6 +7,8 @@ const cardsRouter = require('./routes/cards');
 const {
   createUser, login,
 } = require('./controllers/users');
+const { RegExpForLink } = require('./utils/RegExpForLink');
+const { NotFoundError } = require('./errors/not-found-error');
 
 const auth = require('./middlewares/auth');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
@@ -26,33 +28,34 @@ app.use(requestLogger); // подключаем логгер запросов
 // за ним идут все обработчики роутов
 app.post('/signin', celebrate({
   body: Joi.object().keys({
-    email: Joi.string().required(),
-    password: Joi.string().required().min(8),
-  }).unknown(true),
+    email: Joi.string().required().email(),
+    password: Joi.string().required(),
+  }),
 }), login);
+
 app.post('/signup', celebrate({
   body: Joi.object().keys({
     name: Joi.string().min(2).max(30),
     about: Joi.string().min(2).max(30),
-    avatar: Joi.string(),
-    email: Joi.string().required(),
-    password: Joi.string().required().min(8),
-  }).unknown(true),
+    avatar: Joi.string().uri().pattern(RegExpForLink),
+    email: Joi.string().required().email(),
+    password: Joi.string().required(),
+  }),
 }), createUser);
 
 app.use(auth);
-app.use('/', usersRouter);
-app.use('/', cardsRouter);
-app.use((req, res) => {
-  res.status(404);
-  res.json({ message: 'Некорректный роут' });
+app.use('/users', usersRouter);
+app.use('/cards', cardsRouter);
+app.use((req, res, next) => {
+  next(new NotFoundError('Некорректный роут'));
 });
 app.use(errorLogger); // подключаем логгер ошибок до обработчиков ошибок
+
 app.use(errors()); // обработчик ошибок celebrate
 app.use((err, req, res, next) => {
   // если у ошибки нет статуса, выставляем 500
   const { statusCode = 500, message } = err;
-
+  console.log(err);
   res
     .status(statusCode)
     .send({

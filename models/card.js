@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 
+const RegExpForLink = require('../utils/RegExpForLink');
+
 const cardSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -10,6 +12,9 @@ const cardSchema = new mongoose.Schema({
   link: {
     type: String,
     required: true,
+    validate: {
+      validator: (value) => value.match(RegExpForLink),
+    },
   },
   owner: {
     type: mongoose.Schema.Types.ObjectId,
@@ -19,7 +24,7 @@ const cardSchema = new mongoose.Schema({
   likes: {
     type: [mongoose.Schema.Types.ObjectId],
     ref: 'user',
-    default: undefined,
+    default: [],
   },
   createdAt: {
     type: Date,

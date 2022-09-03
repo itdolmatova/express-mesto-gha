@@ -1,7 +1,8 @@
 const Card = require('../models/card');
 const { extractUser } = require('./users');
 const { WrongDataError } = require('../errors/wrong-data-error');
-const { WrongIdError } = require('../errors/wrong-id-error');
+const { NotFoundError } = require('../errors/not-found-error');
+const { WrongUserError } = require('../errors/wrong-user-error');
 
 const extractCard = (card) => {
   const {
@@ -9,7 +10,7 @@ const extractCard = (card) => {
   } = card;
   const likers = likes ? likes.map((user) => extractUser(user)) : likes;
   return {
-    createdAt, link, likes: likers, owner: extractUser(owner), _id,
+    createdAt, link, likes: likers, owner: (owner ? extractUser(owner) : null), _id,
   };
 };
 
@@ -21,12 +22,11 @@ module.exports.createCard = (req, res, next) => {
     .then((card) => res.send(extractCard(card)))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        throw new WrongDataError('Переданы некорректные данные при создании карточки.');
+        next(new WrongDataError('Переданы некорректные данные при создании карточки.'));
       } else {
-        throw err;
+        next(err);
       }
-    })
-    .catch(next);
+    });
 };
 
 module.exports.getCards = (req, res, next) => {
@@ -40,22 +40,22 @@ module.exports.deleteCardById = (req, res, next) => {
   Card.findById(req.params.cardId)
     .then((card) => {
       if (!card) {
-        throw new WrongIdError('Карточка с указанным _id не найдена.');
+        throw new NotFoundError('Карточка с указанным _id не найдена.');
       }
       if (card.owner._id.toString() !== req.user._id) {
-        throw new Error('Карточка создана не Вами, запрещено удалять чужие карточки');
+        throw new WrongUserError('Карточка создана не Вами, запрещено удалять чужие карточки');
       }
-
-      return res.send({ message: 'Пост удалён' });
+      return card.remove();
+    }).then(() => {
+      res.send({ message: 'Пост удалён' });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        throw new WrongDataError('Передан некорректный _id для удаления карточки.');
+        next(new WrongDataError('Передан некорректный _id для удаления карточки.'));
       } else {
-        throw err;
+        next(err);
       }
-    })
-    .catch(next);
+    });
 };
 
 module.exports.addLikeCard = (req, res, next) => {
@@ -68,16 +68,15 @@ module.exports.addLikeCard = (req, res, next) => {
       if (card) {
         res.send(extractCard(card));
       } else {
-        throw new WrongIdError('Передан несуществующий _id карточки.');
+        throw new NotFoundError('Передан несуществующий _id карточки.');
       }
     }).catch((err) => {
       if (err.name === 'CastError') {
-        throw new WrongDataError('Переданы некорректные данные для постановки лайка.');
+        next(new WrongDataError('Переданы некорректные данные для постановки лайка.'));
       } else {
-        throw err;
+        next(err);
       }
-    })
-    .catch(next);
+    });
 };
 
 module.exports.deleteLikeCard = (req, res, next) => {
@@ -90,14 +89,13 @@ module.exports.deleteLikeCard = (req, res, next) => {
       if (card) {
         res.send(extractCard(card));
       } else {
-        throw new WrongIdError('Передан несуществующий _id карточки.');
+        throw new NotFoundError('Передан несуществующий _id карточки.');
       }
     }).catch((err) => {
       if (err.name === 'CastError') {
-        throw new WrongDataError('Переданы некорректные данные для снятия лайка.');
+        next(new WrongDataError('Переданы некорректные данные для снятия лайка.'));
       } else {
-        throw err;
+        next(err);
       }
-    })
-    .catch(next);
+    });
 };
